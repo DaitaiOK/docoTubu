@@ -59,6 +59,12 @@
             <scope>runtime</scope>
         </dependency>
         
+        <!-- パスワードのハッシュ化（BCrypt）用。Spring Security本体は使わず暗号部分のみ利用 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
         <!-- Gson for API -->
         <dependency>
             <groupId>com.google.code.gson</groupId>

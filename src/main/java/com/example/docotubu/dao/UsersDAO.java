@@ -1,7 +1,6 @@
 package com.example.docotubu.dao;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,17 +17,14 @@ import jakarta.annotation.PostConstruct;
  */
 @Repository
 public class UsersDAO {
-    private final String JDBC_URL = "jdbc:h2:~/docoTsubu;AUTO_SERVER=TRUE";
-    private final String DB_USER = "sa";
-    private final String DB_PASS = "";
 
     /**
      * アプリ起動時にUSERSテーブルが存在しなければ作成する
+     * ※PASSにはBCryptでハッシュ化した値（60文字）を格納する
      */
     @PostConstruct
     public void createTableIfNotExists() {
-        try { Class.forName("org.h2.Driver"); } catch (ClassNotFoundException e) { throw new IllegalStateException(e); }
-        try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS);
+        try (Connection conn = DBUtil.getConnection();
              Statement stmt = conn.createStatement()) {
             String sql = "CREATE TABLE IF NOT EXISTS USERS ("
                     + "ID INT PRIMARY KEY AUTO_INCREMENT, "
@@ -43,13 +39,12 @@ public class UsersDAO {
     }
 
     /**
-     * ユーザーを登録する
+     * ユーザーを登録する（passはハッシュ化済みの値を渡すこと）
      * @return 登録成功時true、失敗時（ユーザー名重複・DBエラー等）false
      */
     public boolean registerUser(User user) {
-        try { Class.forName("org.h2.Driver"); } catch (ClassNotFoundException e) { throw new IllegalStateException(e); }
         String sql = "INSERT INTO USERS(NAME, PASS) VALUES(?, ?)";
-        try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS);
+        try (Connection conn = DBUtil.getConnection();
              PreparedStatement pStmt = conn.prepareStatement(sql)) {
             pStmt.setString(1, user.getName());
             pStmt.setString(2, user.getPass());
@@ -73,19 +68,18 @@ public class UsersDAO {
     }
 
     /**
-     * NAMEとPASSが一致するユーザーを検索する
-     * @return 一致するユーザー（見つからない・DBエラー時はnull）
+     * NAMEに一致するユーザーを検索する
+     * ※パスワードはハッシュ化されているためSQLでは比較できない。照合はService側で行う
+     * @return 一致するユーザー（PASSはハッシュ値）。見つからない・DBエラー時はnull
      */
-    public User findUser(User user) {
-        try { Class.forName("org.h2.Driver"); } catch (ClassNotFoundException e) { throw new IllegalStateException(e); }
-        String sql = "SELECT ID, NAME, PASS FROM USERS WHERE NAME = ? AND PASS = ?";
-        try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS);
+    public User findByName(String name) {
+        String sql = "SELECT ID, NAME, PASS FROM USERS WHERE NAME = ?";
+        try (Connection conn = DBUtil.getConnection();
              PreparedStatement pStmt = conn.prepareStatement(sql)) {
-            pStmt.setString(1, user.getName());
-            pStmt.setString(2, user.getPass());
+            pStmt.setString(1, name);
             try (ResultSet rs = pStmt.executeQuery()) {
                 if (rs.next()) {
-                    System.out.println("[UsersDAO] ユーザーが見つかりました: " + user.getName());
+                    System.out.println("[UsersDAO] ユーザーが見つかりました: " + name);
                     return new User(rs.getInt("ID"), rs.getString("NAME"), rs.getString("PASS"));
                 }
             }
@@ -94,7 +88,7 @@ public class UsersDAO {
             e.printStackTrace();
             return null;
         }
-        System.out.println("[UsersDAO] 一致するユーザーはいません: " + user.getName());
+        System.out.println("[UsersDAO] 一致するユーザーはいません: " + name);
         return null;
     }
 }

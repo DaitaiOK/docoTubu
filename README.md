@@ -3,6 +3,16 @@
 どこにいてもつぶやける、シンプルなつぶやき投稿Webアプリです。
 投稿すると Gemini API と連携した「AI太郎」が自動で返信します。
 
+## スクリーンショット
+
+| ログイン | タイムライン |
+|---|---|
+| ![ログイン画面](docs/images/login.png) | ![タイムライン画面](docs/images/main.png) |
+
+| ユーザー登録 | AI太郎の返信 |
+|---|---|
+| ![ユーザー登録画面](docs/images/register.png) | ![AI太郎の返信](docs/images/ai-reply.png) |
+
 ## 主な機能
 
 - ユーザー登録 / ログイン / ログアウト
@@ -11,11 +21,48 @@
 
 ## 技術構成
 
-- Java 17 / Spring Boot 3.2（Spring MVC）
-- JSP + JSTL
-- H2 Database（JDBC + DAOパターン）
-- Lombok / Gson
-- Gemini API（gemini-2.5-flash）
+| 分類 | 使用技術 |
+|---|---|
+| 言語 | Java 17 |
+| フレームワーク | Spring Boot 3.2（Spring MVC） |
+| View | JSP + JSTL |
+| DB | H2 Database（JDBC + DAOパターン） |
+| セキュリティ | spring-security-crypto（BCrypt） |
+| 外部API | Gemini API（gemini-2.5-flash） |
+| ライブラリ | Lombok / Gson |
+
+## アーキテクチャ
+
+Controller → Service → DAO の3層構成です。AI太郎の返信は `@Async` により非同期で生成します。
+
+```mermaid
+flowchart LR
+    Browser["ブラウザ<br/>(JSP)"] --> Controller
+    subgraph Spring Boot
+        Controller --> Service
+        Service --> DAO
+        Service -. "@Async" .-> AI["AIPostService"]
+        AI --> Gemini["GeminiApiClient"]
+    end
+    DAO --> H2[("H2 Database")]
+    AI --> DAO
+    Gemini --> API["Gemini API"]
+```
+
+**つぶやき投稿時の流れ**
+
+1. `MainController` がつぶやきを DB に保存し、すぐに画面へ戻る
+2. 裏側で `AIPostService` が Gemini API に返信を依頼
+3. 返信を「AI太郎」の投稿として DB に保存
+4. タイムラインの自動更新（3秒ごと）で AI太郎 の返信が表示される
+
+## 工夫した点
+
+- **AI返信の非同期化**：Gemini API の応答を待たずに画面を返すため、`@Async` で返信処理を分離しました。
+- **パスワードのハッシュ化**：BCrypt でソルト付きハッシュとして保存し、平文のパスワードを DB に残しません。
+- **APIキーの分離**：キーは Git 管理対象外の `secret.properties` に置き、`spring.config.import` で読み込みます。
+- **AIへのなりすまし防止**：AIの投稿者名「AI太郎」ではユーザー登録できないようにしています。
+- **基本的な脆弱性対策**：SQL は `PreparedStatement`、画面出力は `<c:out>` でエスケープし、SQLインジェクションと XSS を防いでいます。
 
 ## セットアップ
 
@@ -33,9 +80,9 @@ APIキーは [Google AI Studio](https://aistudio.google.com/apikey) で取得で
 ### 2. データベース
 
 H2 のファイルDB（`~/docoTsubu`）を使用します。
+テーブル（`USERS`・`mutters`）はアプリ起動時に自動作成されるため、事前準備は不要です。
 
-- `USERS` テーブルはアプリ起動時に自動作成されます。
-- `mutters` テーブルと初期データは `src/main/java/test/InitDB.java` を実行して作成します。
+サンプルのつぶやきを入れたい場合は `src/main/java/test/InitDB.java` を実行してください（`mutters` の既存データは消去されます）。
 
 ### 3. 起動
 
@@ -54,3 +101,13 @@ H2 のファイルDB（`~/docoTsubu`）を使用します。
 1. トップ画面の「ユーザー未登録の方はこちら」からユーザーを登録
 2. 登録したユーザーでログイン
 3. つぶやきを投稿すると、少し後に AI太郎 が返信します
+
+## 今後の課題
+
+- つぶやき削除時の権限チェック（現在は他人の投稿も削除できる）
+- CSRF 対策
+- AI太郎が会話の文脈（過去のやり取り）を踏まえて返信できるようにする
+
+## ライセンス
+
+[MIT License](LICENSE)

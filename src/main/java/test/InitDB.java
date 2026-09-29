@@ -1,18 +1,19 @@
 package test;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import com.example.docotubu.dao.DBUtil;
+
+/**
+ * muttersテーブルを初期化し、サンプルデータを投入する（任意で実行）
+ * ※テーブル自体はアプリ起動時に各DAOが自動作成する
+ */
 public class InitDB {
     public static void main(String[] args) {
         // H2データベースに接続してテーブル作成とデータ挿入を行う
-        String jdbcUrl = "jdbc:h2:~/docoTsubu";
-        String user = "sa";
-        String pass = "";
-
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, user, pass)) {
+        try (Connection conn = DBUtil.getConnection()) {
             // テーブル作成
             String createTableSql = "CREATE TABLE IF NOT EXISTS mutters ("
                     + "id INT AUTO_INCREMENT PRIMARY KEY, "
