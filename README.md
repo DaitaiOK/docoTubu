@@ -5,13 +5,13 @@
 
 ## スクリーンショット
 
-| ログイン | タイムライン |
-|---|---|
-| ![ログイン画面](docs/images/login.png) | ![タイムライン画面](docs/images/main.png) |
+**タイムライン（AI太郎の返信付き）**
 
-| ユーザー登録 | AI太郎の返信 |
+![タイムライン画面](docs/images/main.png)
+
+| ログイン | ユーザー登録 |
 |---|---|
-| ![ユーザー登録画面](docs/images/register.png) | ![AI太郎の返信](docs/images/ai-reply.png) |
+| ![ログイン画面](docs/images/login.png) | ![ユーザー登録画面](docs/images/register.png) |
 
 ## 主な機能
 
