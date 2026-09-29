@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP:wght@300;500;700&display=swap');
+
+:root {
+    --bg-color: #0b0c10;
+    --card-bg: rgba(20, 25, 35, 0.6);
+    --text-primary: #e0fbfc;
+    --text-secondary: #98c1d9;
+    --neon-cyan: #00ffff;
+    --neon-purple: #bc13fe;
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    background-color: var(--bg-color);
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(0, 255, 255, 0.05), transparent 35%),
+        radial-gradient(circle at 85% 30%, rgba(188, 19, 254, 0.05), transparent 35%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    font-family: 'Noto Sans JP', sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+h1, h2, h3 {
+    font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+a {
+    color: var(--neon-cyan);
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+a:hover {
+    text-shadow: 0 0 8px var(--neon-cyan);
+}
+
+/* Glassmorphism Container */
+.container {
+    width: 100%;
+    max-width: 600px;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    margin-top: 20px;
+    height: fit-content;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 20px;
+}
+
+input[type="text"], input[type="password"] {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--neon-cyan);
+    color: var(--text-primary);
+    padding: 12px 15px;
+    border-radius: 8px;
+    width: calc(100% - 32px);
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: 0.3s ease;
+    box-sizing: content-box;
+}
+
+input[type="text"]:focus, input[type="password"]:focus {
+    outline: none;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+    border-color: #fff;
+}
+
+/* Buttons */
+.btn, input[type="submit"] {
+    background: transparent;
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    width: 100%;
+}
+
+.btn:hover, input[type="submit"]:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 0 0 15px var(--neon-cyan);
+}
+
+.btn-purple {
+    border-color: var(--neon-purple);
+    color: var(--neon-purple);
+}
+
+.btn-purple:hover {
+    background: var(--neon-purple);
+    color: #fff;
+    box-shadow: 0 0 15px var(--neon-purple);
+}
+
+/* Header Section */
+.header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+/* Timeline Cards */
+.timeline {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.mutter-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid var(--neon-cyan);
+    padding: 15px;
+    border-radius: 4px 8px 8px 4px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mutter-card:hover {
+    transform: translateX(5px);
+    box-shadow: -5px 0 15px rgba(0, 255, 255, 0.2);
+}
+
+.mutter-card.ai-mutter {
+    border-left-color: var(--neon-purple);
+    background: rgba(188, 19, 254, 0.05);
+}
+
+.mutter-card.ai-mutter:hover {
+    box-shadow: -5px 0 15px rgba(188, 19, 254, 0.2);
+}
+
+.mutter-header {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.mutter-author {
+    font-weight: 700;
+    color: var(--neon-cyan);
+}
+
+.ai-mutter .mutter-author {
+    color: var(--neon-purple);
+    font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
+}
+
+.mutter-text {
+    line-height: 1.6;
+    word-break: break-all;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+    margin: 30px 0;
+}
+
+/* Delete Button */
+.btn-delete {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-delete:hover {
+    color: #ff4757;
+    text-shadow: 0 0 10px #ff4757;
+    transform: scale(1.2);
+}
+

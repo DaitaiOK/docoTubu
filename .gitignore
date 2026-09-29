@@ -1,0 +1,23 @@
+# 秘密情報（APIキー）
+src/main/resources/secret.properties
+
+# ビルド成果物
+target/
+build/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# IntelliJ / VS Code
+.idea/
+*.iml
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Mavenで取得する依存jar（pom.xmlと重複）
+src/main/webapp/WEB-INF/lib/
