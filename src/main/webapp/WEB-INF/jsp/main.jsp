@@ -20,6 +20,14 @@
             <p style="color: #ff4757; text-align: center; text-shadow: 0 0 5px #ff4757;"><c:out value="${requestScope.errorMsg}" /></p>
         </c:if>
         
+        <form action="searchMutter" method="get" autocomplete="off" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" name="keyword" value="<c:out value="${requestScope.keyword}" />" placeholder="キーワードで検索" style="margin-bottom: 0;">
+            <input type="submit" value="検索" class="btn-cyan" style="width: 100px;">
+        </form>
+        <c:if test="${requestScope.keyword != null}">
+            <p style="text-align: right; margin: 0 0 10px;"><a href="Main">検索を解除</a></p>
+        </c:if>
+
         <form action="Main" method="post" autocomplete="off" style="display: flex; gap: 10px;">
             <input type="text" name="text" placeholder="いまどうしてる？" style="margin-bottom: 0;">
             <input type="submit" value="送信" class="btn-cyan" style="width: 100px;">
@@ -46,7 +54,9 @@
                     </c:forEach>
                 </c:when>
                 <c:otherwise>
-                    <p style="text-align: center; color: var(--text-secondary);">まだ通信ログはありません。</p>
+                    <p style="text-align: center; color: var(--text-secondary);">
+                        ${requestScope.keyword != null ? '該当するつぶやきはありません。' : 'まだ通信ログはありません。'}
+                    </p>
                 </c:otherwise>
             </c:choose>
         </div>
@@ -56,7 +66,7 @@
     <script>
         // 3秒ごとに最新のタイムラインを裏側で取得して差し替える
         setInterval(() => {
-            fetch('Main') // メイン画面のURLに裏側でアクセス
+            fetch(location.href) // 今表示しているURLに裏側でアクセス（検索中は検索結果を更新する）
                 .then(response => response.text())
                 .then(html => {
                     // 取得したHTMLの中から、タイムラインの部分だけを抽出

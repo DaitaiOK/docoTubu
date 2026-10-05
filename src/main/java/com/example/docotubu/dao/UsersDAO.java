@@ -19,6 +19,12 @@ import jakarta.annotation.PostConstruct;
 public class UsersDAO {
 
     /**
+     * ログインできないユーザー（AI太郎など）のPASSに設定する値
+     * ※BCryptのハッシュ形式ではないため、どんなパスワードを入力しても照合に失敗する
+     */
+    public static final String UNUSABLE_PASS = "!";
+
+    /**
      * アプリ起動時にUSERSテーブルが存在しなければ作成する
      * ※PASSにはBCryptでハッシュ化した値（60文字）を格納する
      */
@@ -65,6 +71,23 @@ public class UsersDAO {
         }
         System.out.println("[UsersDAO] ユーザーを登録しました: " + user.getName());
         return true;
+    }
+
+    /**
+     * ログインできないシステム用ユーザー（AI太郎など）を、存在しなければ登録する
+     * ※つぶやきはuser_idでUSERSテーブルを参照するため、AIの投稿にもユーザーが必要
+     */
+    public void registerSystemUserIfNotExists(String name) {
+        String sql = "MERGE INTO USERS(NAME, PASS) KEY(NAME) VALUES(?, ?)";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pStmt = conn.prepareStatement(sql)) {
+            pStmt.setString(1, name);
+            pStmt.setString(2, UNUSABLE_PASS);
+            pStmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("[UsersDAO] システム用ユーザーの登録中にDBエラーが発生しました: " + name);
+            e.printStackTrace();
+        }
     }
 
     /**

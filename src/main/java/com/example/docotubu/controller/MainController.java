@@ -45,7 +45,8 @@ public class MainController {
         }
 
         if (text != null && text.trim().length() != 0) {
-            Mutter mutter = new Mutter(loginUser.getName(), text);
+            // 投稿者はセッションのログインユーザーのIDで紐付ける
+            Mutter mutter = new Mutter(loginUser.getId(), text);
             muttersDAO.create(mutter);
             
             // AI連携（非同期呼び出し）

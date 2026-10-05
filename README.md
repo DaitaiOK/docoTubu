@@ -17,6 +17,7 @@
 
 - ユーザー登録 / ログイン / ログアウト
 - つぶやきの投稿・削除・タイムライン表示（3秒ごとに自動更新）
+- つぶやきのキーワード検索（本文の部分一致）
 - AI太郎（Gemini API）による自動返信
 
 ## 技術構成
@@ -81,6 +82,8 @@ APIキーは [Google AI Studio](https://aistudio.google.com/apikey) で取得で
 
 H2 のファイルDB（`~/docoTsubu`）を使用します。
 テーブル（`USERS`・`mutters`）はアプリ起動時に自動作成されるため、事前準備は不要です。
+`mutters` は投稿者を `user_id`（`USERS.ID` への外部キー）で保持します。
+旧構造（投稿者名を `userName` カラムに直接保持）のDBが残っている場合は、起動時に既存データを保ったまま自動で移行します。
 
 サンプルのつぶやきを入れたい場合は `src/main/java/test/InitDB.java` を実行してください（`mutters` の既存データは消去されます）。
 

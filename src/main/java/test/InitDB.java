@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import com.example.docotubu.dao.DBUtil;
+import com.example.docotubu.dao.MuttersDAO;
+import com.example.docotubu.dao.UsersDAO;
 
 /**
  * muttersテーブルを初期化し、サンプルデータを投入する（任意で実行）
@@ -12,43 +14,39 @@ import com.example.docotubu.dao.DBUtil;
  */
 public class InitDB {
     public static void main(String[] args) {
-        // H2データベースに接続してテーブル作成とデータ挿入を行う
+        // テーブル作成（旧構造のmuttersテーブルが残っていればuser_id方式へ移行する）
+        // muttersはUSERSを参照するため、USERS → mutters の順に作成する
+        UsersDAO usersDAO = new UsersDAO();
+        usersDAO.createTableIfNotExists();
+        new MuttersDAO().createTableIfNotExists();
+        System.out.println("テーブルを作成しました。");
+
+        // サンプルの投稿者をログイン不可のユーザーとして用意する（既存ユーザーは消さない）
+        String[] sampleUsers = { "湊 雄輔", "綾瀬 吾郎" };
+        for (String name : sampleUsers) {
+            usersDAO.registerSystemUserIfNotExists(name);
+        }
+
+        // H2データベースに接続してデータ挿入を行う
         try (Connection conn = DBUtil.getConnection()) {
-            // テーブル作成
-            String createTableSql = "CREATE TABLE IF NOT EXISTS mutters ("
-                    + "id INT AUTO_INCREMENT PRIMARY KEY, "
-                    + "userName VARCHAR(255) NOT NULL, "
-                    + "text VARCHAR(255) NOT NULL)";
-            PreparedStatement pstmt1 = conn.prepareStatement(createTableSql);
-            pstmt1.executeUpdate();
-            System.out.println("テーブルを作成しました。");
-
-            // USERSテーブル作成（ユーザー登録機能用。既存ユーザーは消さない）
-            String createUsersSql = "CREATE TABLE IF NOT EXISTS USERS ("
-                    + "ID INT PRIMARY KEY AUTO_INCREMENT, "
-                    + "NAME VARCHAR(100) NOT NULL UNIQUE, "
-                    + "PASS VARCHAR(255) NOT NULL)";
-            PreparedStatement pstmtUsers = conn.prepareStatement(createUsersSql);
-            pstmtUsers.executeUpdate();
-            System.out.println("USERSテーブルを作成しました。");
-
             // データリセット（重複を防ぐため一度空にする）
             String truncateSql = "TRUNCATE TABLE mutters";
             PreparedStatement pstmt2 = conn.prepareStatement(truncateSql);
             pstmt2.executeUpdate();
 
-            // 初期データ挿入
-            String insertSql = "INSERT INTO mutters (userName, text) VALUES (?, ?)";
+            // 初期データ挿入（投稿者はユーザー名からuser_idを引いて紐付ける）
+            String insertSql = "INSERT INTO mutters (user_id, text) "
+                    + "SELECT ID, ? FROM USERS WHERE NAME = ?";
             PreparedStatement pstmt3 = conn.prepareStatement(insertSql);
-            
-            pstmt3.setString(1, "湊 雄輔");
-            pstmt3.setString(2, "今日は休みだ");
+
+            pstmt3.setString(1, "今日は休みだ");
+            pstmt3.setString(2, "湊 雄輔");
             pstmt3.executeUpdate();
 
-            pstmt3.setString(1, "綾瀬 吾郎");
-            pstmt3.setString(2, "いいな～");
+            pstmt3.setString(1, "いいな～");
+            pstmt3.setString(2, "綾瀬 吾郎");
             pstmt3.executeUpdate();
-            
+
             System.out.println("初期データを追加しました。H2データベースの準備が完了しました！");
 
         } catch (SQLException e) {
