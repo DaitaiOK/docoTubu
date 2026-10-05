@@ -7,7 +7,7 @@
 <title>どこつぶ - Register</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
-<body>
+<body class="theme-register">
     <div class="container">
         <h1>REGISTER</h1>
         <p style="text-align: center; color: var(--text-secondary); margin-bottom: 30px;">新しいユーザーを登録します</p>
