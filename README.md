@@ -99,6 +99,20 @@ H2 のファイルDB（`~/docoTsubu`）を使用します。
 
 `DocotubuApplication` を Java アプリケーションとして実行し、http://localhost:8080/ にアクセスします。
 
+**コマンドラインから起動する場合（Maven Wrapper）**
+
+Maven のインストールは不要です（初回実行時に自動でダウンロードされます）。環境変数 `JAVA_HOME` に JDK 17 以上を設定しておいてください。
+
+```bash
+# Windows
+mvnw.cmd spring-boot:run
+
+# macOS / Linux
+./mvnw spring-boot:run
+```
+
+起動後、http://localhost:8080/ にアクセスします。
+
 ## 使い方
 
 1. トップ画面の「ユーザー未登録の方はこちら」からユーザーを登録

@@ -1,0 +1,3 @@
+# Maven Wrapper: シェルスクリプトはLF、Windows用バッチはCRLFで固定する
+/mvnw text eol=lf
+*.cmd text eol=crlf
