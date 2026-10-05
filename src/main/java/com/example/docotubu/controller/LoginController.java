@@ -2,6 +2,7 @@ package com.example.docotubu.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.http.HttpSession;
@@ -14,6 +15,15 @@ import com.example.docotubu.service.LoginService;
 public class LoginController {
 
     private final LoginService loginService;
+
+    /**
+     * トップページ（/）でログイン画面を表示する
+     * ※Spring Bootを直接起動した場合、index.jspはウェルカムページとして自動表示されないため
+     */
+    @GetMapping("/")
+    public String index() {
+        return "forward:/index.jsp";
+    }
 
     @PostMapping("/Login")
     public String doPost(
