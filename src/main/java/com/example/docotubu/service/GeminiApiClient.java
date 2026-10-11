@@ -31,7 +31,9 @@ public class GeminiApiClient {
      * @param history 古い順に並べた会話。最後はユーザーの発言にする
      */
     public String generateResponse(String systemInstruction, List<Message> history) {
-        String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
+        // APIキーはURLに含めず、リクエストヘッダー（x-goog-api-key）で渡す
+        // ※URLはプロキシやログに記録されやすく、キーが漏れる原因になるため
+        String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
         if (API_KEY == null || API_KEY.equals("ここにAPIキーを貼り付けてください") || API_KEY.isEmpty()) {
             System.err.println("APIキーが設定されていません。application.properties を確認してください。");
@@ -69,6 +71,7 @@ public class GeminiApiClient {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Content-Type", "application/json")
+                    .header("x-goog-api-key", API_KEY)
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
