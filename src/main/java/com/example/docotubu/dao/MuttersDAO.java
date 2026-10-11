@@ -19,7 +19,7 @@ public class MuttersDAO {
 
     // 投稿者名はUSERSテーブルから取得する（muttersテーブルには持たない）
     private static final String SELECT_WITH_USER_NAME =
-            "SELECT m.id, u.NAME AS userName, m.text "
+            "SELECT m.id, m.user_id, u.NAME AS userName, m.text, m.is_edited, m.updated_at "
             + "FROM mutters m JOIN USERS u ON m.user_id = u.ID ";
 
     /**
@@ -34,12 +34,15 @@ public class MuttersDAO {
                     + "id INT AUTO_INCREMENT PRIMARY KEY, "
                     + "user_id INT NOT NULL, "
                     + "text VARCHAR(255) NOT NULL, "
+                    + "is_edited BOOLEAN DEFAULT FALSE NOT NULL, "
+                    + "updated_at TIMESTAMP, "
                     + "CONSTRAINT fk_mutters_user FOREIGN KEY (user_id) REFERENCES USERS(ID))";
             stmt.executeUpdate(sql);
 
             if (hasColumn(conn, "MUTTERS", "USERNAME")) {
                 migrateUserNameToUserId(stmt);
             }
+            addEditColumns(stmt);
             System.out.println("[MuttersDAO] muttersテーブルの準備が完了しました");
         } catch (SQLException e) {
             System.out.println("[MuttersDAO] muttersテーブルの作成に失敗しました");
@@ -76,6 +79,15 @@ public class MuttersDAO {
         stmt.executeUpdate("ALTER TABLE mutters DROP COLUMN userName");
 
         System.out.println("[MuttersDAO] muttersテーブルの移行が完了しました");
+    }
+
+    /**
+     * 編集機能用のカラム（編集済みフラグ・最終編集日時）が無いテーブルに追加する
+     * ※IF NOT EXISTS 付きなので、追加済みのテーブルに対して何度実行してもよい
+     */
+    private void addEditColumns(Statement stmt) throws SQLException {
+        stmt.executeUpdate("ALTER TABLE mutters ADD COLUMN IF NOT EXISTS is_edited BOOLEAN DEFAULT FALSE NOT NULL");
+        stmt.executeUpdate("ALTER TABLE mutters ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP");
     }
 
     private boolean hasColumn(Connection conn, String tableName, String columnName) throws SQLException {
@@ -143,11 +155,57 @@ public class MuttersDAO {
         return true;
     }
 
-    public boolean delete(int id) {
-        String sql = "DELETE FROM mutters WHERE id = ?";
+    /**
+     * 指定したIDのつぶやきを取得する（編集画面の初期表示・投稿者の確認用）
+     * @return 該当なし・DBエラー時はnull
+     */
+    public Mutter findById(int id) {
+        String sql = SELECT_WITH_USER_NAME + "WHERE m.id = ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pStmt = conn.prepareStatement(sql)) {
             pStmt.setInt(1, id);
+            try (ResultSet rs = pStmt.executeQuery()) {
+                return rs.next() ? toMutter(rs) : null;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * つぶやきの本文を更新し、編集済みにする
+     * ※投稿者本人の投稿だけを更新するため、user_idも条件に含める
+     * @return 更新できた場合はtrue（対象なし・本人以外・DBエラー時はfalse）
+     */
+    public boolean update(int id, int userId, String text) {
+        String sql = "UPDATE mutters SET text = ?, is_edited = TRUE, updated_at = CURRENT_TIMESTAMP "
+                + "WHERE id = ? AND user_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pStmt = conn.prepareStatement(sql)) {
+            pStmt.setString(1, text);
+            pStmt.setInt(2, id);
+            pStmt.setInt(3, userId);
+            int result = pStmt.executeUpdate();
+            if (result != 1) return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * つぶやきを削除する
+     * ※投稿者本人の投稿だけを削除するため、user_idも条件に含める
+     * @return 削除できた場合はtrue（対象なし・本人以外・DBエラー時はfalse）
+     */
+    public boolean delete(int id, int userId) {
+        String sql = "DELETE FROM mutters WHERE id = ? AND user_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pStmt = conn.prepareStatement(sql)) {
+            pStmt.setInt(1, id);
+            pStmt.setInt(2, userId);
             int result = pStmt.executeUpdate();
             if (result != 1) return false;
         } catch (SQLException e) {
@@ -158,7 +216,11 @@ public class MuttersDAO {
     }
 
     private Mutter toMutter(ResultSet rs) throws SQLException {
-        return new Mutter(rs.getInt("id"), rs.getString("userName"), rs.getString("text"));
+        Mutter mutter = new Mutter(rs.getInt("id"), rs.getString("userName"), rs.getString("text"));
+        mutter.setUserId(rs.getInt("user_id"));
+        mutter.setEdited(rs.getBoolean("is_edited"));
+        mutter.setUpdatedAt(rs.getTimestamp("updated_at"));
+        return mutter;
     }
 
     private String escapeLike(String keyword) {

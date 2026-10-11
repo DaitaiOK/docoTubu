@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -39,17 +40,34 @@
             <c:choose>
                 <c:when test="${not empty requestScope.mutterList}">
                     <c:forEach var="mutter" items="${requestScope.mutterList}">
+                        <%-- 削除・編集は本人の投稿にだけ表示する --%>
+                        <c:set var="isOwn" value="${mutter.userId == sessionScope.loginUser.id}" />
                         <div class="mutter-card ${mutter.userName == 'AI太郎' ? 'ai-mutter' : ''}">
                             <div class="mutter-header">
                                 <span class="mutter-author">
                                     ${mutter.userName == 'AI太郎' ? '🤖 ' : '👤 '}
                                     <c:out value="${mutter.userName}" />
                                 </span>
-                                <a href="Delete?id=${mutter.id}" class="btn-delete" title="削除する">✖</a>
+                                <c:if test="${isOwn}">
+                                    <a href="Delete?id=${mutter.id}" class="btn-delete" title="削除する">✖</a>
+                                </c:if>
                             </div>
                             <div class="mutter-text">
                                 <c:out value="${mutter.text}" />
                             </div>
+                            <%-- 編集済みの表記と編集リンク --%>
+                            <c:if test="${mutter.edited or isOwn}">
+                                <div class="mutter-footer">
+                                    <span>
+                                        <c:if test="${mutter.edited}">
+                                            (編集済み - <fmt:formatDate value="${mutter.updatedAt}" pattern="yyyy/MM/dd HH:mm" />)
+                                        </c:if>
+                                    </span>
+                                    <c:if test="${isOwn}">
+                                        <a href="updateMutter?id=${mutter.id}" class="btn-edit">編集</a>
+                                    </c:if>
+                                </div>
+                            </c:if>
                         </div>
                     </c:forEach>
                 </c:when>
