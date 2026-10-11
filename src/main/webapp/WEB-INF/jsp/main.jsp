@@ -14,7 +14,10 @@
         
         <div class="header-info">
             <span>👤 <c:out value="${sessionScope.loginUser.name}" /> さんが接続中</span>
-            <a href="Logout" class="btn btn-purple" style="padding: 5px 15px; width: auto;">切断 (LOGOUT)</a>
+            <form action="Logout" method="post" style="margin: 0;">
+                <input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
+                <button type="submit" class="btn btn-purple" style="padding: 5px 15px; width: auto; font-size: inherit;">切断 (LOGOUT)</button>
+            </form>
         </div>
         
         <c:if test="${not empty requestScope.errorMsg}">
@@ -30,6 +33,7 @@
         </c:if>
 
         <form action="Main" method="post" autocomplete="off" style="display: flex; gap: 10px;">
+            <input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
             <input type="text" name="text" placeholder="いまどうしてる？" style="margin-bottom: 0;">
             <input type="submit" value="送信" class="btn-cyan" style="width: 100px;">
         </form>
@@ -49,7 +53,11 @@
                                     <c:out value="${mutter.userName}" />
                                 </span>
                                 <c:if test="${isOwn}">
-                                    <a href="Delete?id=${mutter.id}" class="btn-delete" title="削除する">✖</a>
+                                    <form action="Delete" method="post" style="margin: 0;">
+                                        <input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
+                                        <input type="hidden" name="id" value="${mutter.id}">
+                                        <button type="submit" class="btn-delete" title="削除する">✖</button>
+                                    </form>
                                 </c:if>
                             </div>
                             <div class="mutter-text">

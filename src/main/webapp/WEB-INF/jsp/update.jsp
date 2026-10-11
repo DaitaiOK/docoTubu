@@ -18,6 +18,7 @@
         </c:if>
 
         <form action="${pageContext.request.contextPath}/updateMutter" method="post" autocomplete="off">
+            <input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
             <input type="hidden" name="id" value="<c:out value='${requestScope.id}' />">
             <div class="form-group">
                 <textarea name="text" rows="4" maxlength="255" placeholder="いまどうしてる？" required><c:out value="${requestScope.text}" /></textarea>

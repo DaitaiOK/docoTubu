@@ -18,6 +18,7 @@
         </c:if>
 
         <form action="${pageContext.request.contextPath}/Login" method="post" autocomplete="off">
+            <input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
             <div class="form-group">
                 <input type="text" name="name" placeholder="ユーザー名" required>
             </div>

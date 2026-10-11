@@ -5,8 +5,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import com.example.docotubu.config.CsrfTokenFilter;
 import com.example.docotubu.model.User;
 import com.example.docotubu.service.LoginService;
 
@@ -29,6 +31,7 @@ public class LoginController {
     public String doPost(
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "pass", required = false) String pass,
+            HttpServletRequest request,
             HttpSession session,
             Model model) {
 
@@ -48,6 +51,9 @@ public class LoginController {
             if (loginUser != null) {
                 // 認証成功：セッションスコープに保存してメイン画面へ
                 System.out.println("[LoginController] ログイン成功。メイン画面へ遷移します");
+                // セッション固定攻撃対策：ログイン前のセッションIDを使えないよう、IDとCSRFトークンを作り直す
+                request.changeSessionId();
+                CsrfTokenFilter.regenerateToken(session);
                 session.setAttribute("loginUser", loginUser);
                 return "redirect:/Main";
             }

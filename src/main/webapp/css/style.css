@@ -212,6 +212,9 @@ hr {
 
 /* Delete Button */
 .btn-delete {
+    background: none;
+    border: none;
+    padding: 0;
     color: rgba(255, 255, 255, 0.3);
     font-size: 1.2em;
     cursor: pointer;
