@@ -29,10 +29,12 @@ public class InitDB {
 
         // H2データベースに接続してデータ挿入を行う
         try (Connection conn = DBUtil.getConnection()) {
-            // データリセット（重複を防ぐため一度空にする）
-            String truncateSql = "TRUNCATE TABLE mutters";
-            PreparedStatement pstmt2 = conn.prepareStatement(truncateSql);
+            // データリセット（重複を防ぐため一度空にし、IDの採番も1からに戻す）
+            // ※mutters は自分自身を参照する外部キー（reply_to_id）を持つため、TRUNCATE ではなく DELETE を使う
+            String deleteSql = "DELETE FROM mutters";
+            PreparedStatement pstmt2 = conn.prepareStatement(deleteSql);
             pstmt2.executeUpdate();
+            conn.prepareStatement("ALTER TABLE mutters ALTER COLUMN id RESTART WITH 1").executeUpdate();
 
             // 初期データ挿入（投稿者はユーザー名からuser_idを引いて紐付ける）
             String insertSql = "INSERT INTO mutters (user_id, text) "

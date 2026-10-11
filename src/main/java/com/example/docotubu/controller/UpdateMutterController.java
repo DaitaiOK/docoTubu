@@ -70,6 +70,14 @@ public class UpdateMutterController {
             return "update";
         }
 
+        // 文字数チェック（DBのカラム長を超えると保存できないため）
+        if (text.length() > Mutter.MAX_TEXT_LENGTH) {
+            model.addAttribute("errorMsg", "つぶやきは" + Mutter.MAX_TEXT_LENGTH + "文字以内で入力してください");
+            model.addAttribute("id", idStr);
+            model.addAttribute("text", text);
+            return "update";
+        }
+
         // 更新処理（本人以外のつぶやき・存在しないIDの場合もfalseになる）
         if (!updateMutterService.execute(idStr, loginUser.getId(), text)) {
             System.out.println("[UpdateMutterController] つぶやきの更新に失敗しました: id=" + idStr);

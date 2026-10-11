@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
@@ -16,7 +17,20 @@ public class GeminiApiClient {
     @Value("${gemini.api.key}")
     private String API_KEY; 
 
+    /**
+     * 会話の1発言（role は "user"（ユーザー）または "model"（AI））
+     */
+    public record Message(String role, String text) {}
+
     public String generateResponse(String systemInstruction, String userMessage) {
+        return generateResponse(systemInstruction, List.of(new Message("user", userMessage)));
+    }
+
+    /**
+     * これまでの会話を踏まえて返信を生成する
+     * @param history 古い順に並べた会話。最後はユーザーの発言にする
+     */
+    public String generateResponse(String systemInstruction, List<Message> history) {
         String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
 
         if (API_KEY == null || API_KEY.equals("ここにAPIキーを貼り付けてください") || API_KEY.isEmpty()) {
@@ -37,14 +51,16 @@ public class GeminiApiClient {
             }
 
             JsonArray contents = new JsonArray();
-            JsonObject contentObj = new JsonObject();
-            contentObj.addProperty("role", "user");
-            JsonArray partsArray = new JsonArray();
-            JsonObject textPart = new JsonObject();
-            textPart.addProperty("text", userMessage);
-            partsArray.add(textPart);
-            contentObj.add("parts", partsArray);
-            contents.add(contentObj);
+            for (Message message : history) {
+                JsonObject contentObj = new JsonObject();
+                contentObj.addProperty("role", message.role());
+                JsonArray partsArray = new JsonArray();
+                JsonObject textPart = new JsonObject();
+                textPart.addProperty("text", message.text());
+                partsArray.add(textPart);
+                contentObj.add("parts", partsArray);
+                contents.add(contentObj);
+            }
             root.add("contents", contents);
 
             String requestBody = new Gson().toJson(root);

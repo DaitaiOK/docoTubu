@@ -5,7 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import com.example.docotubu.model.Mutter;
 import org.springframework.context.annotation.DependsOn;
@@ -19,7 +21,7 @@ public class MuttersDAO {
 
     // 投稿者名はUSERSテーブルから取得する（muttersテーブルには持たない）
     private static final String SELECT_WITH_USER_NAME =
-            "SELECT m.id, m.user_id, u.NAME AS userName, m.text, m.is_edited, m.updated_at "
+            "SELECT m.id, m.user_id, u.NAME AS userName, m.text, m.is_edited, m.updated_at, m.reply_to_id "
             + "FROM mutters m JOIN USERS u ON m.user_id = u.ID ";
 
     /**
@@ -36,13 +38,16 @@ public class MuttersDAO {
                     + "text VARCHAR(255) NOT NULL, "
                     + "is_edited BOOLEAN DEFAULT FALSE NOT NULL, "
                     + "updated_at TIMESTAMP, "
-                    + "CONSTRAINT fk_mutters_user FOREIGN KEY (user_id) REFERENCES USERS(ID))";
+                    + "reply_to_id INT, "
+                    + "CONSTRAINT fk_mutters_user FOREIGN KEY (user_id) REFERENCES USERS(ID), "
+                    + "CONSTRAINT fk_mutters_reply_to FOREIGN KEY (reply_to_id) REFERENCES mutters(id) ON DELETE SET NULL)";
             stmt.executeUpdate(sql);
 
             if (hasColumn(conn, "MUTTERS", "USERNAME")) {
                 migrateUserNameToUserId(stmt);
             }
             addEditColumns(stmt);
+            addReplyToColumn(stmt);
             System.out.println("[MuttersDAO] muttersテーブルの準備が完了しました");
         } catch (SQLException e) {
             System.out.println("[MuttersDAO] muttersテーブルの作成に失敗しました");
@@ -88,6 +93,17 @@ public class MuttersDAO {
     private void addEditColumns(Statement stmt) throws SQLException {
         stmt.executeUpdate("ALTER TABLE mutters ADD COLUMN IF NOT EXISTS is_edited BOOLEAN DEFAULT FALSE NOT NULL");
         stmt.executeUpdate("ALTER TABLE mutters ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP");
+    }
+
+    /**
+     * AI太郎の返信がどのつぶやきへの返信かを記録するカラムが無いテーブルに追加する
+     * ※返信元のつぶやきが削除されたら、返信側はNULLにして残す
+     * ※IF NOT EXISTS 付きなので、追加済みのテーブルに対して何度実行してもよい
+     */
+    private void addReplyToColumn(Statement stmt) throws SQLException {
+        stmt.executeUpdate("ALTER TABLE mutters ADD COLUMN IF NOT EXISTS reply_to_id INT");
+        stmt.executeUpdate("ALTER TABLE mutters ADD CONSTRAINT IF NOT EXISTS fk_mutters_reply_to "
+                + "FOREIGN KEY (reply_to_id) REFERENCES mutters(id) ON DELETE SET NULL");
     }
 
     private boolean hasColumn(Connection conn, String tableName, String columnName) throws SQLException {
@@ -140,19 +156,59 @@ public class MuttersDAO {
         return mutterList;
     }
 
+    /**
+     * つぶやきを登録する
+     * ※登録に成功したら、採番されたIDを引数のmutterに設定する（AI太郎の返信の紐付けに使う）
+     */
     public boolean create(Mutter mutter) {
-        String sql = "INSERT INTO mutters(user_id, text) VALUES(?, ?)";
+        String sql = "INSERT INTO mutters(user_id, text, reply_to_id) VALUES(?, ?, ?)";
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pStmt = conn.prepareStatement(sql)) {
+             PreparedStatement pStmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pStmt.setInt(1, mutter.getUserId());
             pStmt.setString(2, mutter.getText());
+            pStmt.setObject(3, mutter.getReplyToId(), Types.INTEGER);
             int result = pStmt.executeUpdate();
             if (result != 1) return false;
+            try (ResultSet keys = pStmt.getGeneratedKeys()) {
+                if (keys.next()) {
+                    mutter.setId(keys.getInt(1));
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
         return true;
+    }
+
+    /**
+     * ユーザーとAI太郎のやり取り（そのユーザーのつぶやきと、それへのAI太郎の返信）を新しいものから取得する
+     * ※AI太郎が会話の流れを踏まえて返信するための履歴として使う
+     * @param limit 取得する最大件数
+     * @return 古い順に並べたやり取り。DBエラー時はnull
+     */
+    public List<Mutter> findConversation(int userId, int limit) {
+        List<Mutter> mutterList = new ArrayList<>();
+        String sql = SELECT_WITH_USER_NAME
+                + "WHERE m.user_id = ? "
+                + "OR m.reply_to_id IN (SELECT id FROM mutters WHERE user_id = ?) "
+                + "ORDER BY m.id DESC LIMIT ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pStmt = conn.prepareStatement(sql)) {
+            pStmt.setInt(1, userId);
+            pStmt.setInt(2, userId);
+            pStmt.setInt(3, limit);
+            try (ResultSet rs = pStmt.executeQuery()) {
+                while (rs.next()) {
+                    mutterList.add(toMutter(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+        Collections.reverse(mutterList);
+        return mutterList;
     }
 
     /**
@@ -220,6 +276,7 @@ public class MuttersDAO {
         mutter.setUserId(rs.getInt("user_id"));
         mutter.setEdited(rs.getBoolean("is_edited"));
         mutter.setUpdatedAt(rs.getTimestamp("updated_at"));
+        mutter.setReplyToId(rs.getObject("reply_to_id", Integer.class));
         return mutter;
     }
 

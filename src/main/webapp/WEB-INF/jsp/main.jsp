@@ -35,7 +35,7 @@
 
         <form action="Main" method="post" autocomplete="off" style="display: flex; gap: 10px;">
             <input type="hidden" name="_csrf" value="<c:out value='${sessionScope.csrfToken}' />">
-            <input type="text" name="text" placeholder="いまどうしてる？" style="margin-bottom: 0;">
+            <input type="text" name="text" placeholder="いまどうしてる？" maxlength="255" style="margin-bottom: 0;">
             <input type="submit" value="送信" class="btn-cyan" style="width: 100px;">
         </form>
         

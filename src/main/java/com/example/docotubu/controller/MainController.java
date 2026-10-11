@@ -44,20 +44,33 @@ public class MainController {
             return "redirect:/index.jsp";
         }
 
-        if (text != null && text.trim().length() != 0) {
-            // 投稿者はセッションのログインユーザーのIDで紐付ける
-            Mutter mutter = new Mutter(loginUser.getId(), text);
-            muttersDAO.create(mutter);
-            
-            // AI連携（非同期呼び出し）
-            aiPostService.execute(mutter);
-
-            return "redirect:/Main";
-        } else {
-            model.addAttribute("errorMsg", "つぶやきが入力されていません");
-            List<Mutter> mutterList = muttersDAO.findAll();
-            model.addAttribute("mutterList", mutterList);
-            return "main";
+        if (text == null || text.trim().length() == 0) {
+            return showError("つぶやきが入力されていません", model);
         }
+        // DBのカラム長を超えると保存できないため、事前にはじく
+        if (text.length() > Mutter.MAX_TEXT_LENGTH) {
+            return showError("つぶやきは" + Mutter.MAX_TEXT_LENGTH + "文字以内で入力してください", model);
+        }
+
+        // 投稿者はセッションのログインユーザーのIDで紐付ける
+        Mutter mutter = new Mutter(loginUser.getId(), text);
+        if (!muttersDAO.create(mutter)) {
+            return showError("つぶやきの投稿に失敗しました", model);
+        }
+
+        // AI連携（非同期呼び出し）
+        aiPostService.execute(mutter);
+
+        return "redirect:/Main";
+    }
+
+    /**
+     * エラーメッセージを添えてメイン画面を表示する
+     */
+    private String showError(String errorMsg, Model model) {
+        model.addAttribute("errorMsg", errorMsg);
+        List<Mutter> mutterList = muttersDAO.findAll();
+        model.addAttribute("mutterList", mutterList);
+        return "main";
     }
 }

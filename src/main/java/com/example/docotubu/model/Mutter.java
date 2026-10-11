@@ -14,6 +14,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class Mutter {
+    // 本文の最大文字数（muttersテーブルの text カラムが VARCHAR(255) のため）
+    public static final int MAX_TEXT_LENGTH = 255;
+
     private int id;
     private int userId;
     private String userName;
@@ -22,6 +25,8 @@ public class Mutter {
     private boolean edited;
     // 最終編集日時（未編集ならnull）
     private Timestamp updatedAt;
+    // AI太郎の返信の場合、返信元のつぶやきのID（ユーザーのつぶやき・返信元が削除された場合はnull）
+    private Integer replyToId;
 
     /**
      * 投稿登録用のコンストラクタ（idはDB側で自動採番されるため不要）
